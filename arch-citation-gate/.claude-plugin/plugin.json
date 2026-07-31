@@ -1,0 +1,8 @@
+{
+  "name": "arch-citation-gate",
+  "version": "0.1.0",
+  "description": "Owns exactly one methodology: the sourcing norm (issue-1's citation-format rule, generalized) — every phase-1 proposal or phase-2 record claim phrased as external/industry knowledge must carry a URL or a Sources: entry. Fires on docs/issue-<n>/proposals/*.md and docs/issue-<n>/reports/architecture.md writes, shared unchanged across both phases. Resulting-content computation, fail-closed. Kill switch: ARCH_CITATION_GATE_OFF=1.",
+  "author": {
+    "name": "Jung Jiwon & Lee Jongkwan"
+  }
+}

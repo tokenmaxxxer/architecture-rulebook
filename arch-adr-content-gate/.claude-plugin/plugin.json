@@ -1,0 +1,8 @@
+{
+  "name": "arch-adr-content-gate",
+  "version": "0.2.0",
+  "description": "Owns exactly one methodology: the ADR+C4 required-element norm for this role's own phase-2 record (docs/issue-<n>/reports/architecture.md) — context/decision/consequences/alternatives-considered sections plus a C4-level diagram. Migrated from architecture/hooks/adr-gate.sh (issue-1) into its own plugin per issue-10's plugin-set mandate; the MultiEdit resulting-content gap is closed in this migration. Kill switch: ARCH_ADR_CONTENT_GATE_OFF=1 (ARCHITECTURE_ADR_GATE_OFF=1 kept as a deprecated alias for one release).",
+  "author": {
+    "name": "Jung Jiwon & Lee Jongkwan"
+  }
+}

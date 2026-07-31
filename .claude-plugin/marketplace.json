@@ -8,6 +8,26 @@
       "name": "architecture",
       "source": "./architecture",
       "description": "The architecture role on contract v3 (issue-160 round-3 promotion). Decides: 컴포넌트 경계·의존 방향."
+    },
+    {
+      "name": "arch-sequence-gate",
+      "source": "./arch-sequence-gate",
+      "description": "Owns phase ordering (survey -> scout-brief-or-justified-skip -> proposal -> record) for the architecture role's contract-v3 loop. Fail-closed, existence-only. Kill switch: ARCH_SEQUENCE_GATE_OFF=1."
+    },
+    {
+      "name": "arch-citation-gate",
+      "source": "./arch-citation-gate",
+      "description": "Owns the sourcing norm: every architecture-role proposal/record claim phrased as external/industry knowledge must carry a URL or a Sources: entry. Shared across phase-1 and phase-2. Kill switch: ARCH_CITATION_GATE_OFF=1."
+    },
+    {
+      "name": "arch-adr-content-gate",
+      "source": "./arch-adr-content-gate",
+      "description": "Owns the ADR+C4 required-element norm for the architecture role's phase-2 record (docs/issue-<n>/reports/architecture.md). Migrated from architecture/hooks/adr-gate.sh. Kill switch: ARCH_ADR_CONTENT_GATE_OFF=1."
+    },
+    {
+      "name": "arch-phase1-checklist",
+      "source": "./arch-phase1-checklist",
+      "description": "Owns the repeated survey -> scout-brief -> proposal procedure for the architecture role's phase-1 work, as a checklist artifact. Documentation-only, no hook."
     }
   ]
 }

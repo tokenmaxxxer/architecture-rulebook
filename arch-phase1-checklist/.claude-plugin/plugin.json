@@ -1,0 +1,8 @@
+{
+  "name": "arch-phase1-checklist",
+  "version": "0.1.0",
+  "description": "Owns exactly one methodology: the repeated survey -> scout-brief -> proposal procedure for this role's phase-1 (기획서) work, expressed as a checklist artifact rather than a gate or a subagent (documentation-only, matching this role's proportionality call against TOGAF/arc42-weight tooling). No hook, no kill switch.",
+  "author": {
+    "name": "Jung Jiwon & Lee Jongkwan"
+  }
+}
