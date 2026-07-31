@@ -15,17 +15,28 @@ generated as skeleton scaffolding by issue-170.
 ```
 claude plugin marketplace add tokenmaxxxer/architecture-rulebook
 claude plugin install architecture
+claude plugin marketplace add tokenmaxxxer/tokenmaxxxer-core
+claude plugin install core
+claude plugin install warrant
 ```
+
+`core` and `warrant` supply canon shared across every role: the
+role-agnostic trailer/record-fields/handbook-trigger gates, the
+`role-directive.sh` boilerplate this rulebook's `directive.sh` sources,
+and the `warrant-hunter` subagent. This rulebook no longer vendors copies
+of any of them.
 
 ## Layout
 
 - `architecture/.claude-plugin/plugin.json` — plugin manifest
-- `architecture/hooks/hooks.json` — SessionStart + PreToolUse wiring
-- `architecture/hooks/directive.sh` — SessionStart role directive
-- `architecture/hooks/record-fields-gate.sh` — this role's record required-field gate
-- `architecture/hooks/trailer-gate.sh` — commit `Subject: issue-<n>` trailer gate
-- `architecture/hooks/handbook-trigger-gate.sh` — s21 handbook-sync gate
-- `architecture/agents/warrant-hunter.md` — rotating-stance hunt agent
+- `architecture/hooks/hooks.json` — SessionStart wiring (PreToolUse gates
+  now fire from `core`'s own global registration)
+- `architecture/hooks/directive.sh` — SessionStart role directive (stub:
+  sources `core/hooks/lib/role-directive.sh`, supplies this role's four
+  unique values)
+- `architecture/hooks/tests/stub-check.sh` — drift check (byte-identical
+  copy of `core/hooks/tests/stub-check.sh`); run as
+  `architecture/hooks/tests/stub-check.sh architecture/hooks`
 - `docs/specs/approvers.md` — Approve-authority allowlist (see below)
 
 This is scaffolding, not a finished rulebook: fill in doctrine detail,
