@@ -67,7 +67,15 @@ this repo vendors none of it. Each gate now carries:
   statement after the shebang, before `set -uo pipefail`. Any internal
   error (a stray uncaught Python exception, a syntax slip) is now remapped
   to `exit 2` (blocking) instead of falling through to a non-2 exit code,
-  which Claude Code treats as non-blocking/fail-open.
+  which Claude Code treats as non-blocking/fail-open. The guarantee now
+  starts at the source line itself (issue-16): the `gate-lib.sh` source
+  line carries an `||` guard (`|| { echo ... >&2; exit 2; }`), so a
+  missing/unreachable `core` fails closed (`exit 2`) instead of fail-open
+  (`exit 127`, with `gate_trap_fail_closed` never having had a chance to
+  install) — a `fail-missing-core` fixture proves this per gate.
+  `arch-sequence-gate`'s matcher additionally covers `Bash`, matching its
+  gate code's existing Bash-write-bypass branch (previously advertised/
+  tested but unreachable in production).
 - **allowlist kill-switches**: `ARCH_SEQUENCE_GATE_OFF`,
   `ARCH_CITATION_GATE_OFF`, `ARCH_ADR_CONTENT_GATE_OFF` (plus the
   deprecated alias `ARCHITECTURE_ADR_GATE_OFF`) only disable their gate

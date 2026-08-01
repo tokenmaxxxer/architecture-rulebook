@@ -31,7 +31,7 @@
 # each occurrence.
 #
 # Kill switch: export ARCH_CITATION_GATE_OFF=1
-. "${CLAUDE_PLUGIN_ROOT_CORE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../core" && pwd -P)}/hooks/lib/gate-lib.sh"
+. "${CLAUDE_PLUGIN_ROOT_CORE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../core" && pwd -P)}/hooks/lib/gate-lib.sh" || { echo "arch-citation-gate: cannot source gate-lib.sh" >&2; exit 2; }
 gate_trap_fail_closed
 set -uo pipefail
 
@@ -98,8 +98,23 @@ if not ok:
     )
 
 TRIGGER_PHRASES = ("industry practice", "well-established", "well established",
-                    "widely used", "업계 표준", "일반적으로", "널리 쓰이는")
-TRIGGER_RE = re.compile("(" + "|".join(re.escape(p) for p in TRIGGER_PHRASES) + ")", re.I)
+                    "widely used", "업계 표준", "널리 쓰이는")
+# "일반적으로" alone is an ordinary connective ("일반적으로 이렇게 본다") and
+# no longer triggers on its own (issue-16 fix design #4). It only triggers
+# paired with a genuine adopted/used-as-practice claim verb form within the
+# same clause (bounded window, no sentence boundary crossed) — narrowing the
+# false-positive on bare "일반적으로" without weakening the citation norm for
+# an actual "generally adopted practice" assertion in Korean.
+KOREAN_CLAIM_VERB_FORMS = ("쓰이는", "쓰이다", "쓰인다", "사용되는", "사용되다",
+                           "사용된다", "채택되는", "채택되다", "채택된다",
+                           "알려진", "알려져", "알려지다", "받아들여지는",
+                           "받아들여진다", "받아들여지다")
+TRIGGER_RE = re.compile(
+    "(" + "|".join(re.escape(p) for p in TRIGGER_PHRASES) + "|"
+    + r"일반적으로[^.!?\n]{0,30}?(?:" + "|".join(KOREAN_CLAIM_VERB_FORMS) + ")"
+    + ")",
+    re.I,
+)
 
 trigger_matches = list(TRIGGER_RE.finditer(content))
 if not trigger_matches:

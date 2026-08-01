@@ -33,7 +33,7 @@
 #
 # Kill switch: export ARCH_ADR_CONTENT_GATE_OFF=1
 # (ARCHITECTURE_ADR_GATE_OFF=1 honored too, deprecated alias, one release)
-. "${CLAUDE_PLUGIN_ROOT_CORE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../core" && pwd -P)}/hooks/lib/gate-lib.sh"
+. "${CLAUDE_PLUGIN_ROOT_CORE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../core" && pwd -P)}/hooks/lib/gate-lib.sh" || { echo "arch-adr-content-gate: cannot source gate-lib.sh" >&2; exit 2; }
 gate_trap_fail_closed
 set -uo pipefail
 
