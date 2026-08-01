@@ -246,3 +246,54 @@ Sources:
 - `docs/issue-13/proposals/2026-08-01-gate-a-plus-remediation.md` (this repo — approved fix design)
 - `tokenmaxxxer/tokenmaxxxer-core` commit `22a7cad` (`deliver(implementation): gate-house standard canonization (issue-72) (#74)`) — the landed `gate-lib.sh`/`gate-lib.py` this record builds on
 - https://code.claude.com/docs/en/hooks (Claude Code hooks reference — exit-code semantics underlying the trap-at-top fix)
+
+## 2026-08-01 addendum — compliance-check.sh confirmation
+
+Following the human approver's `APPROVE issue-13/architecture` comment
+on issue #13, this addendum records a run of `tokenmaxxxer-core`'s
+gate-house standard compliance detector
+(`core/hooks/tests/compliance-check.sh`, landed under core issue #72,
+canon per its own header comment: "referenced (never vendored) exactly
+like `stub-check.sh`") against each of this rulebook's three
+`PreToolUse` gate hooks, per the issue's usage contract
+(`compliance-check.sh <hooks-dir>`). The detector flags two hand-rolled
+anti-patterns the gate-house standard supersedes: (1) a `*_OFF`
+kill-switch env-var read with no `gate_kill_switch_active` call
+(the confirmed fail-open case-statement bug), and (2) an
+`Edit`/`MultiEdit` `.replace(x, y[, 1])` reconstruction with no
+`gate_reconstruct_write` call (the confirmed `replace_all`-ignoring
+bug) — both defects this record's "What was done" section above already
+migrated onto `gate-lib.sh`/`gate-lib.py`.
+
+Run date: 2026-08-01. Command and output:
+
+```
+$ bash <tokenmaxxxer-core checkout>/core/hooks/tests/compliance-check.sh arch-adr-content-gate/hooks
+compliance-check: ok — arch-adr-content-gate/hooks/adr-content-gate.sh
+
+$ bash <tokenmaxxxer-core checkout>/core/hooks/tests/compliance-check.sh arch-citation-gate/hooks
+compliance-check: ok — arch-citation-gate/hooks/citation-gate.sh
+
+$ bash <tokenmaxxxer-core checkout>/core/hooks/tests/compliance-check.sh arch-sequence-gate/hooks
+compliance-check: ok — arch-sequence-gate/hooks/sequence-gate.sh
+
+$ bash <tokenmaxxxer-core checkout>/core/hooks/tests/compliance-check.sh .
+compliance-check: ok — arch-adr-content-gate/hooks/adr-content-gate.sh
+compliance-check: ok — arch-citation-gate/hooks/citation-gate.sh
+compliance-check: ok — arch-sequence-gate/hooks/sequence-gate.sh
+$ echo $?
+0
+```
+
+Result: **PASS, 3/3 gates "ok", exit 0** — no fixes were required. All
+three gates already source `gate_kill_switch_active` and
+`gate_reconstruct_write` from `gate-lib.sh`/`gate-lib.py` as landed by
+this record's own "What was done" section, so the detector found no
+hand-rolled kill-switch or reconstruction anti-patterns to flag. This
+addendum confirms, via the independent core-canon detector rather than
+this role's own test fixtures, that the gate-house standard migration
+already delivered above holds under issue #72's own compliance tooling.
+
+Addendum sources:
+- `tokenmaxxxer/tokenmaxxxer-core`, `core/hooks/tests/compliance-check.sh` (gate-house standard compliance detector, issue #72 canon)
+- issue #13 comment `APPROVE issue-13/architecture` (JiwonJung94, 2026-08-01T07:33:02Z) — the feedback this addendum executes against
