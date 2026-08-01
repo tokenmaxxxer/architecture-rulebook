@@ -1,0 +1,1 @@
+{"tool_name":"MultiEdit","tool_input":{"file_path":"docs/issue-13/proposals/p.md","edits":[{"old_string":"foo","new_string":"This is well-established.\n\nSources: https://example.com/a"},{"old_string":"bar","new_string":"unrelated text"}]}}
