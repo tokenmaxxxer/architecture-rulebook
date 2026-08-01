@@ -1,0 +1,1 @@
+{"tool_name":"MultiEdit","tool_input":{"file_path":"docs/issue-13/reports/architecture.md","edits":[{"old_string":"loop_state: proposed","new_string":"loop_state: landed"},{"old_string":"## Consequences\ne\n","new_string":"## Consequences\ne\nAlternatives Considered\nf\n```mermaid\nC4Context\n```\n"}]}}

@@ -55,6 +55,51 @@ of any of them.
   for one release.
 - `tests/run-gate-tests.sh` — repo-root runner that discovers and invokes
   every plugin's own `tests/run.sh`
+
+### Gate-house standard (`core`'s `gate-lib.sh`, issue-13/72)
+
+All three `PreToolUse` gates (`arch-sequence-gate`, `arch-citation-gate`,
+`arch-adr-content-gate`) source `core/hooks/lib/gate-lib.sh` (+
+`gate-lib.py`, loaded via `importlib` off `$GATE_LIB_PY`) by reference —
+this repo vendors none of it. Each gate now carries:
+
+- **trap-at-top fail-closed**: `gate_trap_fail_closed` is the first
+  statement after the shebang, before `set -uo pipefail`. Any internal
+  error (a stray uncaught Python exception, a syntax slip) is now remapped
+  to `exit 2` (blocking) instead of falling through to a non-2 exit code,
+  which Claude Code treats as non-blocking/fail-open.
+- **allowlist kill-switches**: `ARCH_SEQUENCE_GATE_OFF`,
+  `ARCH_CITATION_GATE_OFF`, `ARCH_ADR_CONTENT_GATE_OFF` (plus the
+  deprecated alias `ARCHITECTURE_ADR_GATE_OFF`) only disable their gate
+  on a recognized on-spelling (`1`/`true`/`yes`/`on`, case-insensitive).
+  Every other value — including an unrecognized typo — leaves the gate
+  ACTIVE (`gate_kill_switch_active`), the reverse of the pre-issue-13
+  denylist behavior.
+- **`replace_all`-correct `Write`/`Edit`/`MultiEdit` reconstruction** via
+  `gate_lib.gate_reconstruct_write`: an `Edit`/per-`MultiEdit`-edit
+  `"replace_all": true` now replaces every occurrence instead of always
+  the first.
+- **malformed-JSON deny** and **absolute/relative-path normalization**
+  via `gate_lib.gate_parse_json_or_deny`/`gate_lib.gate_normalize_path`.
+- `arch-sequence-gate` additionally carries a narrow, bounded Bash-write
+  heuristic: a `Bash` command containing a literal `>`, `>>`, or `tee`
+  redirect to a path that normalizes into one of this role's gated globs
+  is treated as an unresolvable write and denied. Command substitution,
+  `eval`, chained commands (`&&`/`;`), heredocs, and `python3 -c` writes
+  are explicitly **not** covered by this heuristic (deferred; see
+  `docs/issue-13/reports/architecture.md`).
+- `arch-citation-gate`'s sourcing-norm check is now section/adjacency
+  scoped: a trigger phrase and its citation (URL or `Sources:` line) must
+  fall in the same Markdown heading block (or, for files with no heading
+  structure, within a 15-line window) — a citation anywhere else in the
+  file no longer exempts an unrelated, uncited occurrence.
+
+`docs/issue-13/reports/architecture.md` is the phase-2 record for this
+remediation; the per-gate mandatory test matrix (plain `Edit`, resolvable
+`MultiEdit`, `replace_all`, malformed JSON, both kill-switch states,
+absolute `file_path`, plus the citation section-adjacency regression and
+the Bash-write-bypass regression) lives under each plugin's
+`tests/fixtures/`, discovered generically by `tests/run-gate-tests.sh`.
 - stub-check for core canon files (`trailer-gate.sh`,
   `record-fields-gate.sh`, `handbook-trigger-gate.sh`, `parse-check.sh`,
   `stub-check.sh`) runs only by reference against the `core` installation

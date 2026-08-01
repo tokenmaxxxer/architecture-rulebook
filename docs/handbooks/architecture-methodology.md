@@ -61,3 +61,21 @@ absent — `arch-sequence-gate` enforces this mechanically.
 
 See `docs/issue-10/proposals/2026-07-31-architecture-enforcement.md` for
 the full design rationale and open questions.
+
+## Test-harness convention (issue-13)
+
+Each `arch-*-gate` plugin's `tests/run.sh` discovers `tests/fixtures/*/`
+generically (`event.json` + `expect.txt`, `pass`/`fail`), invoked via the
+repo-root `tests/run-gate-tests.sh`. Since issue-13's remediation, a
+fixture directory may additionally carry: an `env.sh` (sourced before the
+gate runs, for kill-switch-value fixtures — absent by default, no
+behavior change for fixtures without one) and a `{{ABS}}` placeholder in
+`event.json` (substituted with that fixture's own resolved absolute path
+before piping to the gate, for absolute-`file_path` fixtures). All three
+gates now reference `core/hooks/lib/gate-lib.sh`/`gate-lib.py`
+(never vendored) for trap-at-top, kill-switch allowlist, JSON
+parse-or-deny, path normalization, and `replace_all`-correct
+reconstruction — running the suite locally requires
+`CLAUDE_PLUGIN_ROOT_CORE` pointed at an installed/checked-out `core`
+plugin. See `docs/issue-13/reports/architecture.md` for the landed test
+matrix.

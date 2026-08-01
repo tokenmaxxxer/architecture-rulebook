@@ -25,18 +25,25 @@
 # to check", i.e. passed it open — this closes that gap by failing
 # closed instead).
 #
+# issue-13 audit fixes: trap-at-top fail-closed, kill-switch allowlist,
+# JSON parsing, path normalization, and replace_all-correct content
+# reconstruction are now handled via core's shared
+# core/hooks/lib/gate-lib.sh + gate-lib.py, referenced (not vendored) per
+# this repo's existing sourcing idiom (see architecture/hooks/directive.sh).
+#
 # Kill switch: export ARCH_ADR_CONTENT_GATE_OFF=1
 # (ARCHITECTURE_ADR_GATE_OFF=1 honored too, deprecated alias, one release)
+. "${CLAUDE_PLUGIN_ROOT_CORE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../core" && pwd -P)}/hooks/lib/gate-lib.sh"
+gate_trap_fail_closed
 set -uo pipefail
 
-case "${ARCH_ADR_CONTENT_GATE_OFF:-}" in
-  ""|0|false|no|off) ;;
-  *) exit 0 ;;
-esac
-case "${ARCHITECTURE_ADR_GATE_OFF:-}" in
-  ""|0|false|no|off) ;;
-  *) echo "arch-adr-content-gate: ARCHITECTURE_ADR_GATE_OFF is a deprecated alias for ARCH_ADR_CONTENT_GATE_OFF; honoring it for this release." >&2; exit 0 ;;
-esac
+gate_kill_switch_active "${ARCH_ADR_CONTENT_GATE_OFF:-}" || { trap - EXIT; exit 0; }
+if [ -n "${ARCHITECTURE_ADR_GATE_OFF:-}" ]; then
+  gate_kill_switch_active "${ARCHITECTURE_ADR_GATE_OFF:-}" || {
+    echo "arch-adr-content-gate: ARCHITECTURE_ADR_GATE_OFF is a deprecated alias for ARCH_ADR_CONTENT_GATE_OFF; honoring it for this release." >&2
+    trap - EXIT; exit 0
+  }
+fi
 
 command -v python3 >/dev/null 2>&1 || { echo "arch-adr-content-gate: fail-closed: python3 not on PATH" >&2; exit 2; }
 
@@ -45,6 +52,10 @@ payload="$(cat 2>/dev/null || true)"
 
 AG_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd -P)}" AG_PAYLOAD="$payload" python3 <<'PY'
 import json, os, posixpath, re, sys
+import importlib.util
+
+_spec = importlib.util.spec_from_file_location("gate_lib", os.environ["GATE_LIB_PY"])
+gate_lib = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(gate_lib)
 
 def deny(msg):
     sys.stderr.write("arch-adr-content-gate: refused — %s\n" % msg)
@@ -55,12 +66,7 @@ def fail_closed(msg):
     sys.exit(2)
 
 raw = os.environ.get("AG_PAYLOAD", "")
-try:
-    ev = json.loads(raw)
-except Exception as e:
-    fail_closed("unparseable tool-use payload: %r" % (e,))
-if not isinstance(ev, dict):
-    fail_closed("tool-use payload is not a JSON object")
+ev = gate_lib.gate_parse_json_or_deny(raw, deny)
 
 tool = ev.get("tool_name")
 ti = ev.get("tool_input")
@@ -74,14 +80,12 @@ if not isinstance(path, str) or not path:
     sys.exit(0)
 
 root = os.path.normpath(os.environ["AG_ROOT"])
-n = path.replace("\\", "/")
-abs_path = n if posixpath.isabs(n) else posixpath.join(root, n)
-abs_path = posixpath.normpath(abs_path)
-rel = os.path.relpath(abs_path, root).replace("\\", "/")
+rel = gate_lib.gate_normalize_path(root, path)
 
-if not re.match(r'^docs/issue-[0-9]+/reports/architecture\.md$', rel):
+if rel is None or not re.match(r'^docs/issue-[0-9]+/reports/architecture\.md$', rel):
     sys.exit(0)
 
+abs_path = posixpath.join(root.replace("\\", "/"), rel)
 current = None
 if os.path.isfile(abs_path):
     try:
@@ -90,29 +94,9 @@ if os.path.isfile(abs_path):
     except OSError:
         fail_closed("%s exists but cannot be read" % rel)
 
-if tool == "Write":
-    c = ti.get("content")
-    content = c if isinstance(c, str) else None
-elif tool == "Edit":
-    o, n2 = ti.get("old_string"), ti.get("new_string")
-    content = current.replace(o, n2, 1) if (isinstance(o, str) and isinstance(n2, str) and current is not None and o in current) else None
-else:  # MultiEdit
-    edits = ti.get("edits")
-    text = current
-    content = None
-    if isinstance(edits, list) and text is not None:
-        ok = True
-        for e in edits:
-            if not isinstance(e, dict):
-                ok = False; break
-            o, n2 = e.get("old_string"), e.get("new_string")
-            if not isinstance(o, str) or not isinstance(n2, str) or o not in text:
-                ok = False; break
-            text = text.replace(o, n2, 1)
-        if ok:
-            content = text
+content, ok = gate_lib.gate_reconstruct_write(tool, ti, current)
 
-if content is None:
+if not ok:
     fail_closed(
         "this write targets %s but the resulting content cannot be determined from "
         "tool=%r input (MultiEdit with an unresolvable edit, or an Edit whose "
