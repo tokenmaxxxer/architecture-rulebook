@@ -1,0 +1,1 @@
+export ARCH_ADR_CONTENT_GATE_OFF=1

@@ -6,7 +6,20 @@ fail=0
 for dir in fixtures/*/; do
   name="$(basename "$dir")"
   expect="$(cat "$dir/expect.txt")"
-  out="$(CLAUDE_PROJECT_DIR="$(cd "$dir" && pwd -P)" bash "$gate" < "$dir/event.json" 2>&1)"
+  absdir="$(cd "$dir" && pwd -P)"
+  # {{ABS}} in event.json is substituted with this fixture's own absolute
+  # path, so a fixture can exercise an absolute file_path without baking in
+  # a path that only exists on the machine that authored the fixture.
+  payload="$(sed "s#{{ABS}}#$absdir#g" "$dir/event.json")"
+  # A fixture may supply env.sh to set gate-specific env vars (e.g. the
+  # kill switch) for just this one run; sourced in a subshell so nothing
+  # leaks to later fixtures. No env.sh present is a no-op — zero behavior
+  # change for every pre-existing fixture.
+  if [ -f "$dir/env.sh" ]; then
+    out="$( (. "$dir/env.sh"; CLAUDE_PROJECT_DIR="$absdir" bash "$gate") <<<"$payload" 2>&1 )"
+  else
+    out="$(CLAUDE_PROJECT_DIR="$absdir" bash "$gate" <<<"$payload" 2>&1)"
+  fi
   rc=$?
   if [ "$expect" = "pass" ] && [ "$rc" -eq 0 ]; then
     echo "PASS $name"

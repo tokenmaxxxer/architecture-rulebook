@@ -6,6 +6,12 @@
 # core/hooks/record-fields-gate.sh's resulting-content-computation shape,
 # which this script follows independently rather than copies).
 #
+# Sources the shared gate-house library at core/hooks/lib/gate-lib.sh
+# (issue-72) for the trap/kill-switch/JSON-parse/path-normalize/
+# reconstruct-write machinery, by reference only (never vendored — see
+# docs/handbooks/canon-scripts.md). gate-lib.py is loaded via importlib
+# inside this script's own Python payload.
+#
 # Fires on Write|Edit|MultiEdit to two globs for the same issue-<n>:
 #   - docs/issue-<n>/proposals/*.md (phase-1 side): requires
 #     docs/issue-<n>/reports/architecture/survey.md to already exist.
@@ -15,25 +21,42 @@
 #     proposal for the same issue carries an explicit skip-justification
 #     string (issue-1's skip-condition language, carried forward verbatim).
 #
+# Also applies a narrow, BOUNDED heuristic to Bash tool calls: a `command`
+# string containing a literal `>`, `>>`, or `tee` redirect-shaped token
+# aimed at one of the two gated globs is treated the same as an
+# unresolvable Write and fails closed (this gate cannot reconstruct
+# arbitrary shell-produced content, so it refuses the write instead of
+# guessing). This heuristic does NOT do shell parsing: command
+# substitution (`$(...)`), `eval`, `&&`/`;`-chained multi-command
+# sequences beyond the simple redirect/tee token, heredocs, and
+# `python3 -c ...` are explicitly NOT covered and are deferred — a
+# command using those to write to a gated path will not be caught here.
+#
 # Existence-only — content shape is arch-adr-content-gate's and
 # arch-citation-gate's job, kept separate so this stays single-purpose.
 # Fails closed (exit 2) whenever resulting content cannot be determined.
 #
-# Kill switch: export ARCH_SEQUENCE_GATE_OFF=1
+# Kill switch: export ARCH_SEQUENCE_GATE_OFF=1 (or true/yes/on). Any other
+# value, including unrecognized garbage, keeps the gate ACTIVE (fail-closed
+# kill-switch posture — see gate-lib.sh's gate_kill_switch_active).
+
+. "${CLAUDE_PLUGIN_ROOT_CORE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../core" && pwd -P)}/hooks/lib/gate-lib.sh" || { echo "arch-sequence-gate: cannot source gate-lib.sh" >&2; exit 2; }
+gate_trap_fail_closed
 set -uo pipefail
 
-case "${ARCH_SEQUENCE_GATE_OFF:-}" in
-  ""|0|false|no|off) ;;
-  *) exit 0 ;;
-esac
+gate_kill_switch_active "${ARCH_SEQUENCE_GATE_OFF:-}" || { trap - EXIT; exit 0; }
 
 command -v python3 >/dev/null 2>&1 || { echo "arch-sequence-gate: fail-closed: python3 not on PATH" >&2; exit 2; }
 
 payload="$(cat 2>/dev/null || true)"
 [ -n "$payload" ] || { echo "arch-sequence-gate: fail-closed: empty tool-use payload" >&2; exit 2; }
 
-SG_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd -P)}" SG_PAYLOAD="$payload" python3 <<'PY'
-import json, os, posixpath, re, sys
+SG_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd -P)}" SG_PAYLOAD="$payload" GATE_LIB_PY="$GATE_LIB_PY" python3 <<'PY'
+import importlib.util, json, os, re, sys
+
+_spec = importlib.util.spec_from_file_location("gate_lib", os.environ["GATE_LIB_PY"])
+gate_lib = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(gate_lib)
 
 def deny(msg):
     sys.stderr.write("arch-sequence-gate: refused — %s\n" % msg)
@@ -44,15 +67,43 @@ def fail_closed(msg):
     sys.exit(2)
 
 raw = os.environ.get("SG_PAYLOAD", "")
-try:
-    ev = json.loads(raw)
-except Exception as e:
-    fail_closed("unparseable tool-use payload: %r" % (e,))
-if not isinstance(ev, dict):
-    fail_closed("tool-use payload is not a JSON object")
+ev = gate_lib.gate_parse_json_or_deny(raw, deny)
 
 tool = ev.get("tool_name")
 ti = ev.get("tool_input")
+
+root = os.path.normpath(os.environ["SG_ROOT"])
+
+PROPOSAL_RE = re.compile(r'^docs/(issue-[0-9]+)/proposals/[^/]+\.md$')
+RECORD_RE = re.compile(r'^docs/(issue-[0-9]+)/reports/architecture\.md$')
+
+# Narrow, bounded Bash-tool-write-bypass heuristic (see header comment for
+# scope limits). Not full shell parsing.
+BASH_WRITE_RE = re.compile(r'(?:^|[\s;&|])(?:>>?|tee\s+(?:-a\s+)?)\s*(["\']?)([^\s"\';|&<>]+)\1')
+
+if tool == "Bash":
+    if not isinstance(ti, dict):
+        sys.exit(0)
+    command = ti.get("command")
+    if not isinstance(command, str):
+        sys.exit(0)
+    for mo in BASH_WRITE_RE.finditer(command):
+        token = mo.group(2)
+        rel_candidate = gate_lib.gate_normalize_path(root, token)
+        if rel_candidate is None:
+            continue
+        m_bash = PROPOSAL_RE.match(rel_candidate) or RECORD_RE.match(rel_candidate)
+        if m_bash:
+            fail_closed(
+                "a Bash command appears to target %s (matched %s), which is a "
+                "phase-ordering-gated path (docs/%s/proposals/*.md or the phase-2 "
+                "record). arch-sequence-gate cannot reconstruct arbitrary shell "
+                "output, so resulting-content computation is out of scope and this "
+                "write is refused. Use Write/Edit/MultiEdit on this path instead." %
+                (rel_candidate, token, m_bash.group(1))
+            )
+    sys.exit(0)
+
 if tool not in ("Write", "Edit", "MultiEdit"):
     sys.exit(0)
 if not isinstance(ti, dict):
@@ -62,14 +113,11 @@ path = ti.get("file_path")
 if not isinstance(path, str) or not path:
     sys.exit(0)
 
-root = os.path.normpath(os.environ["SG_ROOT"])
-n = path.replace("\\", "/")
-abs_path = n if posixpath.isabs(n) else posixpath.join(root, n)
-abs_path = posixpath.normpath(abs_path)
-rel = os.path.relpath(abs_path, root).replace("\\", "/")
+rel = gate_lib.gate_normalize_path(root, path)
+if rel is None:
+    sys.exit(0)
 
-PROPOSAL_RE = re.compile(r'^docs/(issue-[0-9]+)/proposals/[^/]+\.md$')
-RECORD_RE = re.compile(r'^docs/(issue-[0-9]+)/reports/architecture\.md$')
+abs_path = os.path.join(root, rel) if rel else root
 
 m = PROPOSAL_RE.match(rel) or RECORD_RE.match(rel)
 if not m:
@@ -85,28 +133,8 @@ def resulting_content():
                 current = fh.read(1 << 20)
         except OSError:
             fail_closed("%s exists but cannot be read" % rel)
-    if tool == "Write":
-        c = ti.get("content")
-        return c if isinstance(c, str) else None
-    if tool == "Edit":
-        o, n2 = ti.get("old_string"), ti.get("new_string")
-        if isinstance(o, str) and isinstance(n2, str) and current is not None and o in current:
-            return current.replace(o, n2, 1)
-        return None
-    if tool == "MultiEdit":
-        edits = ti.get("edits")
-        text = current
-        if isinstance(edits, list) and text is not None:
-            for e in edits:
-                if not isinstance(e, dict):
-                    return None
-                o, n2 = e.get("old_string"), e.get("new_string")
-                if not isinstance(o, str) or not isinstance(n2, str) or o not in text:
-                    return None
-                text = text.replace(o, n2, 1)
-            return text
-        return None
-    return None
+    new_text, ok = gate_lib.gate_reconstruct_write(tool, ti, current)
+    return new_text if ok else None
 
 content = resulting_content()
 if content is None:
