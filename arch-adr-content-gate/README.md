@@ -14,13 +14,20 @@ unresolvable `MultiEdit` now fails closed instead of passing unchecked.
 ## What it checks
 
 Fires on `Write|Edit|MultiEdit` to `docs/issue-<n>/reports/
-architecture.md`. Once the resulting content's `loop_state` leaves
-`scope-proposed`/`proposed`, requires literal-substring markers for
-Context, Decision, Consequences, and Alternatives Considered, plus a
-C4-level diagram marker (a ```` ```mermaid ```` fence or `C4 Context`/`C4
-Container`/`Context diagram`/`Container diagram` text). Cheap,
-mechanical, no semantic review — matching this repo's existing gate
-style.
+architecture.md`. Once the resulting content's `loop_state` leaves the
+in-progress states (`drafting`/`reviewing`) or the refusal/error states
+(`decision-not-ripe`/`options-unreachable` — a record parked there is
+explicitly not asserting a decision, so it is exempt the same way a
+proposal-only record is), requires literal-substring markers for
+Context, Decision, Consequences, and Alternatives Considered (or the
+spec-aligned label `considered_options`), a C4-level diagram marker (a
+```` ```mermaid ```` fence or `C4 Context`/`C4 Container`/`Context
+diagram`/`Container diagram` text), and `decision_id`/`outcome`
+frontmatter fields (`outcome` one of `accepted`/`rejected`/`superseded`)
+— per `architecture.spec.json`'s required-field alignment (issue-19).
+`decision_drivers` is spec-optional and never required by this gate.
+Cheap, mechanical, no semantic review — matching this repo's existing
+gate style.
 
 ## Kill switch
 

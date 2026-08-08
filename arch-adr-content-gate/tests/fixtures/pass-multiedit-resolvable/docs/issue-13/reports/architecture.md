@@ -1,5 +1,7 @@
 ---
-loop_state: proposed
+decision_id: issue-13
+outcome: accepted
+loop_state: reviewing
 ---
 ## Context
 c

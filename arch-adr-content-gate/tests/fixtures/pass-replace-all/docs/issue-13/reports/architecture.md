@@ -1,4 +1,6 @@
 ---
+decision_id: issue-13
+outcome: accepted
 loop_state: landed
 ---
 ## Context

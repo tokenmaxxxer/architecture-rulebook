@@ -1,1 +1,1 @@
-{"tool_name":"MultiEdit","tool_input":{"file_path":"docs/issue-13/reports/architecture.md","edits":[{"old_string":"title: x","new_string":"title: y"},{"old_string":"loop_state: scope-proposed","new_string":"loop_state: landed"}]}}
+{"tool_name":"MultiEdit","tool_input":{"file_path":"docs/issue-13/reports/architecture.md","edits":[{"old_string":"title: x","new_string":"title: y"},{"old_string":"loop_state: drafting","new_string":"loop_state: landed"}]}}

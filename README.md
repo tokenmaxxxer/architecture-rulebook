@@ -7,7 +7,10 @@ generated as skeleton scaffolding by issue-170.
 - **decides**: 컴포넌트 경계·의존 방향
 - **use_when**: 새 모듈 경계나 기존 경계 변경이 걸릴 때
 - **produces**: ADR (context/decision/consequences/alternatives-considered), C4 context/container boundary diagram — see `docs/handbooks/architecture-methodology.md` for phase-1/phase-2 stage detail
-- **write_scope**: ["docs/issue-<n>/decisions/**"]
+- **write_scope**: targets the existing `docs/issue-<n>/reports/architecture.md`
+  record (not a new `docs/issue-<n>/decisions/**` tree — see
+  `docs/handbooks/architecture-methodology.md`'s "Spec alignment"
+  section for why that split is deferred, per issue-19)
 - **hand-off**: 인터페이스 형태 세부는 → api-design; 성능 예산이 걸리면 → performance-engineering
 
 ## Install
@@ -76,6 +79,21 @@ this repo vendors none of it. Each gate now carries:
   `arch-sequence-gate`'s matcher additionally covers `Bash`, matching its
   gate code's existing Bash-write-bypass branch (previously advertised/
   tested but unreachable in production).
+- **`loop_state` vocabulary** (issue-19, aligned with
+  `roles/specs/architecture.spec.json`): `drafting`/`reviewing`/`landed`/
+  `decision-not-ripe`/`options-unreachable`. `drafting`/`reviewing`
+  replace the prior `scope-proposed`/`proposed` progress states in this
+  rulebook's live/prescriptive vocabulary (handbook, gate scripts, gate
+  test fixtures); historical `docs/issue-<n>/...` record frontmatter
+  keeps its original values. `decision-not-ripe` and
+  `options-unreachable` are new refusal/error states — see
+  `docs/handbooks/architecture-methodology.md`.
+- **required record fields** (issue-19): `decision_id` and `outcome`
+  (`accepted`/`rejected`/`superseded`) are now required frontmatter on a
+  decision-bearing `docs/issue-<n>/reports/architecture.md`, enforced by
+  `arch-adr-content-gate`; `decision_drivers` is spec-optional and never
+  enforced as required. `context` and `considered_options` map onto the
+  existing `## Context` and "Alternatives Considered" sections.
 - **allowlist kill-switches**: `ARCH_SEQUENCE_GATE_OFF`,
   `ARCH_CITATION_GATE_OFF`, `ARCH_ADR_CONTENT_GATE_OFF` (plus the
   deprecated alias `ARCHITECTURE_ADR_GATE_OFF`) only disable their gate

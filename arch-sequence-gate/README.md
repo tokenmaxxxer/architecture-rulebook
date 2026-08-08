@@ -9,7 +9,9 @@ proposal -> record.
 - `docs/issue-<n>/proposals/*.md` writes require `docs/issue-<n>/
   reports/architecture/survey.md` to already exist.
 - `docs/issue-<n>/reports/architecture.md` writes, once the resulting
-  `loop_state` leaves `scope-proposed`/`proposed`, require both
+  `loop_state` leaves the in-progress states (`drafting`/`reviewing`) or
+  the refusal/error states (`decision-not-ripe`/`options-unreachable`,
+  which do not assert a decision and so are exempt too), require both
   `survey.md` and `scout-brief.md` to exist — unless a proposal for the
   same issue carries an explicit skip-justification phrase for the
   scout-brief step.
