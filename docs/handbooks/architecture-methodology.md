@@ -9,6 +9,49 @@ enforcement of the norms below lives in the `arch-sequence-gate`,
 `docs/issue-10/proposals/2026-07-31-architecture-enforcement.md` §0 for
 which plugin owns which check).
 
+## Spec alignment (`roles/specs/architecture.spec.json`, issue-19)
+
+This role's phase-2 record maps onto the marketplace spec's five
+`required_fields` and five-value `loop_state` vocabulary, additively —
+the spec vocabulary is layered on top of this handbook's existing
+ADR/C4 methodology, never replacing it.
+
+| spec field | required | maps onto |
+|---|---|---|
+| `decision_id` | true | New required frontmatter field on `docs/issue-<n>/reports/architecture.md`, e.g. `decision_id: issue-<n>`. |
+| `context` | true | The existing `## Context` / `**Context**` section. |
+| `considered_options` | true | The existing "Alternatives Considered" section; both labels are accepted, the heading itself stays prose-shaped. |
+| `decision_drivers` | false | Optional section in a phase-2 record; its absence never fails `arch-adr-content-gate`. |
+| `outcome` | true | New required frontmatter field, `outcome: accepted \| rejected \| superseded`, enforced by `arch-adr-content-gate`. The narrative `## Decision` section remains the prose explanation of the same outcome. |
+
+`loop_state` vocabulary — the spec's five values replace this
+rulebook's prior `scope-proposed`/`proposed` progress states
+(historical `docs/issue-<n>/...` record frontmatter already written with
+the old values is left untouched, per the spec-alignment proposal's
+Rationale (c)):
+
+- `drafting` — phase-1 in progress (was `scope-proposed`).
+- `reviewing` — phase-2 in progress, not yet decision-bearing (was
+  `proposed`).
+- `landed` — decision-bearing and complete; unchanged.
+- `decision-not-ripe` — refusal state: the proposal's constraints are
+  insufficient or reversibility is unclear; defer and hold here instead
+  of forcing a premature ADR.
+- `options-unreachable` — error state: `considered_options` references
+  cannot be resolved or read; fail loudly here instead of fabricating
+  options.
+
+Both `decision-not-ripe` and `options-unreachable` are exempt from the
+ADR/C4 required-section check and from the phase-1-artifact-existence
+check (`arch-adr-content-gate`, `arch-sequence-gate`) the same way a
+`drafting`/`reviewing` record is — a record parked in a refusal/error
+state is not asserting a decision yet.
+
+`write_scope` in this repo's `README.md` targets the existing
+`docs/issue-<n>/reports/architecture.md` record, not a new
+`docs/decisions/*.md` tree — see the spec-alignment proposal's
+Rationale (a) for why that split is deferred.
+
 ## Phase 1 facet (기획서)
 
 **Stages**
@@ -46,7 +89,8 @@ gate, or test file edit (draft text only).
 all pass with no bypass env var set.
 
 **Prohibitions** — no phase-2 record may set `loop_state: landed` (or
-any state past `scope-proposed`/`proposed`) while a required phase-1
+any state past `drafting`/`reviewing`, except the refusal/error states
+`decision-not-ripe`/`options-unreachable`) while a required phase-1
 artifact (survey/scout-brief/proposal) for the same `issue-<n>` is
 absent — `arch-sequence-gate` enforces this mechanically.
 

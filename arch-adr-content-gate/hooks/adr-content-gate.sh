@@ -14,7 +14,7 @@
 #
 # Fires on Write/Edit/MultiEdit to docs/issue-<n>/reports/architecture.md
 # once the record's frontmatter loop_state leaves the proposal-only
-# states (scope-proposed/proposed) — i.e. once the record is
+# states (drafting/reviewing) — i.e. once the record is
 # decision-bearing — and requires four ADR section markers plus a
 # C4-level diagram marker. Cheap literal-substring matching, consistent
 # with this repo's existing gate style (no semantic review).
@@ -106,7 +106,11 @@ if not ok:
 
 m_ls = re.search(r'^\s*loop_state:\s*([A-Za-z0-9_-]+)\s*$', content, re.M)
 loop_state = m_ls.group(1).strip().lower() if m_ls else ""
-if loop_state in ("", "scope-proposed", "proposed"):
+# drafting/reviewing: still phase-1/phase-2-in-progress, not yet decision-bearing.
+# decision-not-ripe/options-unreachable: refusal/error states — a record parked
+# there is explicitly not asserting a decision, so it is exempt from the same
+# required-section check as a proposal-only record.
+if loop_state in ("", "drafting", "reviewing", "decision-not-ripe", "options-unreachable"):
     sys.exit(0)
 
 low = content.lower()
@@ -117,17 +121,23 @@ if not (re.search(r'##\s*decision', low) or "**decision**" in low):
     missing.append("Decision")
 if not (re.search(r'##\s*consequences', low) or "**consequences**" in low):
     missing.append("Consequences")
-if "alternatives considered" not in low:
+if not ("alternatives considered" in low or "considered_options" in low):
     missing.append("Alternatives-Considered")
 if not (re.search(r'```mermaid', low) or re.search(r'c4\s+context', low) or
         re.search(r'c4\s+container', low) or "context diagram" in low or "container diagram" in low):
     missing.append("C4-diagram")
+if not re.search(r'^\s*decision_id:\s*\S+\s*$', content, re.M):
+    missing.append("decision_id")
+if not re.search(r'^\s*outcome:\s*(accepted|rejected|superseded)\s*$', content, re.M):
+    missing.append("outcome")
 
 if missing:
     deny(
         "%s is missing required ADR/C4 elements: %s. Per docs/issue-1/proposals/"
-        "2026-07-31-architecture-norms.md, a decision-bearing record needs Context/"
-        "Decision/Consequences/Alternatives Considered sections plus a Context or "
-        "Container level C4 boundary diagram." % (rel, ", ".join(missing))
+        "2026-07-31-architecture-norms.md and docs/issue-19's architecture.spec.json "
+        "alignment, a decision-bearing record needs Context/Decision/Consequences/"
+        "Alternatives Considered (considered_options) sections, a Context or "
+        "Container level C4 boundary diagram, and decision_id/outcome frontmatter."
+        % (rel, ", ".join(missing))
     )
 PY

@@ -46,3 +46,21 @@ either.
 
 No reproduction of a bypass was found; the swap is semantics-preserving for
 the skip/enforce decision.
+
+## before-landing — stance 1: assume this change and another plugin's rule cancel each other — find the pair
+
+Verdict: NO FINDING
+Seed: git diff HEAD (staged, before-landing) touching arch-adr-content-gate/hooks/adr-content-gate.sh, arch-sequence-gate/hooks/sequence-gate.sh, docs/handbooks/architecture-methodology.md, README.md — loop_state vocabulary migrated scope-proposed/proposed -> drafting/reviewing, plus new skip-states decision-not-ripe/options-unreachable and new decision_id/outcome frontmatter checks in adr-content-gate.sh.
+cap_seconds: 120
+tier: default (size:21-200-line diff)
+diff_stat_lines: 28 files changed, 129 insertions(+), 31 deletions(-)
+started_at: 2026-08-09T05:53:56+09:00
+ended_at: 2026-08-09T05:55:10+09:00
+
+Checked for another gate/plugin in this repo hardcoding the old loop_state vocabulary (scope-proposed/proposed) that would now silently never fire against drafting/reviewing records: `grep -rln "loop_state" --include="*.sh" .` returns only arch-adr-content-gate/hooks/adr-content-gate.sh and arch-sequence-gate/hooks/sequence-gate.sh — the two files this diff itself edits in lockstep (both migrated together, same skip-state list added to both). No third gate (arch-citation-gate, arch-phase1-checklist) references loop_state or the old vocabulary at all — `grep -n "proposed\|scope-proposed\|drafting\|reviewing" arch-citation-gate/hooks/*.sh` is empty.
+
+Also checked core's record-fields-gate.sh (/home/jwjung/tokenmaxxxer-core/core/hooks/record-fields-gate.sh), which independently reads loop_state and has its own TERMINAL-state logic (KIND_TERMINAL_DEFAULTS / ROLE_TO_KIND / docs/specs/record-fields-terminal-states.json override) — a plausible collision point for a "required field" or "terminal state" mismatch. Its ROLE_TO_KIND mapping has no "architecture" entry, and no docs/specs/record-fields-terminal-states.json override file exists in this repo, so it falls through to LEGACY_FALLBACK_TERMINAL / a self-declared `kind:` field — it does not hardcode or reference scope-proposed/proposed/drafting/reviewing anywhere, so it is not coupled to this repo's architecture loop_state vocabulary and cannot be cancelled by this rename.
+
+Also checked adr-content-gate.sh's new decision_id/outcome frontmatter requirements against record-fields-gate.sh's own required-field list (what-was-done/why/upstream-basis/loop_state/open-findings/next-steps) — the two field sets are disjoint (decision_id/outcome vs. loop_state/next-steps/etc.), so a record satisfying one does not fail the other; no cancellation reproduced.
+
+No reproduction found of two rules that individually pass but combine to silently disable each other. Stopping per the "no reproduction, no finding" rule.

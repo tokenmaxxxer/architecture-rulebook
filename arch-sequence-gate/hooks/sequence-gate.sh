@@ -17,7 +17,7 @@
 #     docs/issue-<n>/reports/architecture/survey.md to already exist.
 #   - docs/issue-<n>/reports/architecture.md (phase-2 side): requires
 #     both survey.md and scout-brief.md to exist once the resulting
-#     content's loop_state leaves scope-proposed/proposed, UNLESS the
+#     content's loop_state leaves drafting/reviewing, UNLESS the
 #     proposal for the same issue carries an explicit skip-justification
 #     string (issue-1's skip-condition language, carried forward verbatim).
 #
@@ -157,10 +157,13 @@ if not is_record:
         )
     sys.exit(0)
 
-# phase-2 side: only decision-bearing writes (loop_state past proposal-only states) are gated.
+# phase-2 side: only decision-bearing writes (loop_state past proposal-only
+# states) are gated. drafting/reviewing are the in-progress states;
+# decision-not-ripe/options-unreachable are refusal/error states that also
+# do not assert a decision, so phase-ordering does not apply to them either.
 m_ls = re.search(r'^\s*loop_state:\s*([A-Za-z0-9_-]+)\s*$', content, re.M)
 loop_state = m_ls.group(1).strip().lower() if m_ls else ""
-if loop_state in ("", "scope-proposed", "proposed"):
+if loop_state in ("", "drafting", "reviewing", "decision-not-ripe", "options-unreachable"):
     sys.exit(0)
 
 missing = []

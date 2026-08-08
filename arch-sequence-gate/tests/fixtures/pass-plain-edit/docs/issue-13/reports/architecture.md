@@ -1,4 +1,4 @@
 ---
-loop_state: scope-proposed
+loop_state: drafting
 ---
 body
