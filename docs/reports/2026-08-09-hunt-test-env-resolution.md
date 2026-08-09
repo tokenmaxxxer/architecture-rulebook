@@ -24,3 +24,15 @@ Checked for an unlisted path the phase-2 build would actually need to touch:
 - Checked `fail-missing-core` fixtures' `env.sh` (`export CLAUDE_PLUGIN_ROOT_CORE=/nonexistent-core-path-for-test`, sourced in a per-fixture subshell) against the plan's proposed pre-loop `export CLAUDE_PLUGIN_ROOT_CORE=<resolved>`: the per-fixture subshell override doesn't leak back to the parent's exported value, so the pre-existing missing-core fixture keeps working as the proposal claims — no separate fixture-format change needed.
 
 No concrete reproduction of a missing write-set path was found; the three run.sh files plus the aggregator plus the new lib file appear to cover every location the plan requires touching, given the current repo layout (no CI, no cross-file exit-code contract, no fourth gate).
+
+## before-landing — stance 3: assume the rule as written cannot hold — find the state nothing maintains
+
+Verdict: NO FINDING
+Seed: arch-adr-content-gate/tests/run.sh, arch-citation-gate/tests/run.sh, arch-sequence-gate/tests/run.sh, tests/run-gate-tests.sh, tests/lib/test_env_resolve.py
+cap_seconds: 120
+tier: default
+diff_stat_lines: 54 insertions(+), 3 deletions(-) across 4 files (+ new vendored file)
+started_at: 2026-08-09T00:00:00Z
+ended_at: 2026-08-09T00:05:00Z
+
+Probed for state the pre-flight resolver/aggregator assumes but nothing maintains: (1) ran `bash tests/run-gate-tests.sh` in the actual spawn env — all three gates resolved CLAUDE_PLUGIN_ROOT_CORE and passed; (2) ran it again with `env -u CLAUDE_PLUGIN_ROOT_CORE` (no sibling `core`/`tokenmaxxxer-core/core` checkouts present) — all three sub-runners correctly emitted SKIP and the aggregator correctly exited 75 (all-skipped, none-ran, none-failed); (3) checked the `fail-missing-core` fixture's `env.sh` override (`CLAUDE_PLUGIN_ROOT_CORE=/nonexistent-core-path-for-test`) against the new global pre-flight export — the fixture-local override still shadows the pre-flight export correctly inside its own subshell, and the fixture still PASSes; (4) verified the `rc=$?` capture in `run-gate-tests.sh`'s `if bash "$runner"; then ... else rc=$? ...` correctly reads the sub-runner's real exit code, not some intermediate command's; (5) verified the sibling-candidate relative paths (`../../../core`, `../../../tokenmaxxxer-core/core`) are computed consistently at the same directory depth across all three gates. No mismatch between what the resolver/aggregator assumes exists and what actually exists (or is exercised) was found; the "state" it depends on (spawn-env var, or absence thereof triggering SKIP) is exactly what's live in each of the two runs performed. No reproduction of a wrong output.

@@ -123,3 +123,20 @@ reconstruction — running the suite locally requires
 `CLAUDE_PLUGIN_ROOT_CORE` pointed at an installed/checked-out `core`
 plugin. See `docs/issue-13/reports/architecture.md` for the landed test
 matrix.
+
+### Test-env resolution (issue-22)
+
+Since issue-22, running outside the spawn env no longer produces
+misleading FAIL lines. Each `arch-*-gate/tests/run.sh` pre-flight-checks
+core reachability via the vendored `tests/lib/test_env_resolve.py` — a
+verbatim copy of the on-the-record reference resolver
+(`docs/specs/test-env-resolution.md`, issue #551): resolution order is
+`$CLAUDE_PLUGIN_ROOT_CORE` (if it contains a non-empty
+`hooks/lib/gate-lib.sh`), then the first reachable sibling-checkout
+candidate, then **SKIP** — printed to stderr, exit `75`
+(`EX_TEMPFAIL`), never folded into a FAIL. `tests/run-gate-tests.sh`
+treats a sub-runner's exit `75` as SKIP (counted separately from
+`fail=1`) and itself exits `75` when every sub-runner skipped and none
+ran or failed. Do not modify `tests/lib/test_env_resolve.py`
+independently of the on-the-record source — changes belong upstream
+first.

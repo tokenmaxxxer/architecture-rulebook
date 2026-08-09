@@ -2,6 +2,17 @@
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 gate="../hooks/adr-content-gate.sh"
+
+# Pre-flight core resolution per the canonical test-env resolution
+# convention (docs/specs/test-env-resolution.md, issue #551): outside the
+# spawn env, SKIP with a distinct exit code instead of misleading FAILs.
+resolved="$(python3 "../../tests/lib/test_env_resolve.py" "../../../core" "../../../tokenmaxxxer-core/core")"
+rc=$?
+if [ "$rc" -eq 75 ]; then
+  exit 75
+fi
+export CLAUDE_PLUGIN_ROOT_CORE="$resolved"
+
 fail=0
 for dir in fixtures/*/; do
   name="$(basename "$dir")"
