@@ -196,3 +196,16 @@ connascence), and academic/theory (Stevens, Myers & Constantine 1974).
 - why: Metrics like Ca/Ce/I are counts, not judgments of harm; the same count can
   represent benign data coupling or dangerous content coupling.
 - source: https://link.springer.com/article/10.1007/BF00590439
+
+### 15. Structural coupling severity and actual change cost diverge
+- condition: A component ranks moderate under afferent/efferent or connascence classification
+  alone, but version-control history shows it and its dependents are edited together far more
+  often than structurally-similar components, or it is high-severity but essentially frozen.
+- choice: Reprioritize remediation order by pairing the structural classification (rules 1-14)
+  with observed co-change frequency from commit history; a frequently-co-changed pair outranks
+  a statically "worse" but rarely-touched pair, and a structurally severe but frozen pair can
+  wait.
+- why: static structural severity doesn't tell you which coupling is actually costing the team
+  time today; the same connascence type can be dormant or a daily source of ripple failures
+  depending on how often the coupled code actually changes.
+- source: https://codescene.com/blog/manage-technical-debt-with-augmented-code-analysis/
