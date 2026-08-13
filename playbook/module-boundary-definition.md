@@ -99,3 +99,9 @@ than silently picking a side.
 - choice: prefer the placement that isolates the assumption most likely to change (data source, third-party API, regulatory rule) inside a single module, over the placement that merely looks tidier structurally
 - why: Parnas's central finding — decomposition driven by anticipated change, not by current structure, is what actually reduces the cost of the next modification
 - source: https://wstomv.win.tue.nl/edu/2ip30/references/criteria_for_modularization.pdf
+
+### 15. A C4-level boundary diagram exists only as a pasted image, not as a versioned model
+- condition: a container/component boundary diagram for a decision record is a screenshot or hand-drawn image pasted into the record, with no text source a reviewer can diff against the prior version
+- choice: produce the diagram from a single text-based model (one DSL/model file that generates the context/container/component views), and check that source into the record's write scope so the diagram diffs like code across revisions; do not treat a hand-maintained image as satisfying the C4-diagram requirement
+- why: an image can silently drift from the actual decision with no reviewable diff; a single text model generating multiple views also keeps the context/container/component levels (rule 13) consistent with each other by construction instead of being drawn independently and drifting apart
+- source: https://structurizr.com/

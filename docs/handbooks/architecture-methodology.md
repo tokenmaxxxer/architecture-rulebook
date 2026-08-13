@@ -94,6 +94,26 @@ any state past `drafting`/`reviewing`, except the refusal/error states
 artifact (survey/scout-brief/proposal) for the same `issue-<n>` is
 absent — `arch-sequence-gate` enforces this mechanically.
 
+**Diagram requirement** (module-boundary-definition playbook rule 15).
+The C4-level diagram required by stage 1 above must be produced from a
+single text-based model (a DSL/mermaid/plantuml source, or equivalent)
+checked into the record's write scope alongside the record itself, not
+a pasted image with no diffable source — so the diagram reviews like
+code across revisions and the context/container/component levels stay
+derived from one model instead of drifting apart. Not yet mechanized by
+any gate; a phase-2 record whose diagram is image-only should note the
+gap in its "Open findings" section per stage 3 above.
+
+**Decision lineage.** When a phase-2 record's decision supersedes an
+ADR from an earlier issue for the same boundary, the record's
+frontmatter must add a `supersedes: docs/issue-<m>/reports/
+architecture.md` pointer at the prior record (paired with that record's
+`outcome: superseded` value where the prior record predates this
+field); the superseding record's own `outcome` stays whatever this
+decision's outcome is. Amending the prior record with a matching
+`superseded_by:` pointer is expected but not gated. Not yet mechanized
+by `arch-adr-content-gate`.
+
 ## Which plugin enforces what
 
 | Concern | Plugin |

@@ -167,3 +167,16 @@ searched this session.
 - why: SAP: stable packages should be as abstract as they are stable; a stable-but-concrete
   package is a candidate for "zone of pain" and should be pulled toward the main sequence.
 - source: http://principles-wiki.net/collections:robert_c._martin_s_principle_collection
+
+### 14. A layering/direction rule was decided and documented but nobody has generated the actual import graph to see if it currently holds
+- condition: An ADR or code review establishes an intended dependency direction (e.g. domain
+  must not import infra), but verification depends on reviewers remembering the rule during
+  future PRs rather than a rendered, current view of the real import graph.
+- choice: Generate the dependency graph directly from the codebase's actual imports (not
+  hand-drawn) as part of closing the decision, and re-run it whenever verifying the rule still
+  holds; treat any edge crossing the declared boundary as a finding to fix or explicitly
+  re-litigate, not something to catch by memory in review.
+- why: a graph rendered from real imports catches drift a text rule cannot — orphaned modules,
+  unlisted/implicit dependencies, and the exact edges violating a declared direction are only
+  visible once the actual graph is drawn, not asserted.
+- source: https://github.com/sverweij/dependency-cruiser
