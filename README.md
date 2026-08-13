@@ -58,6 +58,12 @@ of any of them.
   for one release.
 - `tests/run-gate-tests.sh` — repo-root runner that discovers and invokes
   every plugin's own `tests/run.sh`
+- `playbook/<axis>.md` — operational decision-rule playbook (issue-1174):
+  condition→choice→source rule blocks per decision axis
+  (module-boundary-definition, dependency-direction, coupling-classification,
+  interface-contract-shape, decomposition-strategy), each file's front
+  matter carrying `axis:`/`rule_count_floor:` for the parent repo's
+  `gates/playbook_depth_gate.py`
 
 ### Gate-house standard (`core`'s `gate-lib.sh`, issue-13/72)
 
