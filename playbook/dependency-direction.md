@@ -177,6 +177,6 @@ searched this session.
   holds; treat any edge crossing the declared boundary as a finding to fix or explicitly
   re-litigate, not something to catch by memory in review.
 - why: a graph rendered from real imports catches drift a text rule cannot — orphaned modules,
-  unlisted/implicit dependencies, and the exact edges violating a declared direction are only
-  visible once the actual graph is drawn, not asserted.
-- source: https://github.com/sverweij/dependency-cruiser
+  unlisted/implicit dependencies, cycles, and the exact edges violating a declared direction are
+  only visible once the actual graph is drawn, not asserted.
+- source: https://lobehub.com/skills/blueraai-bluera-base-claude-code-graph

@@ -207,5 +207,6 @@ connascence), and academic/theory (Stevens, Myers & Constantine 1974).
   wait.
 - why: static structural severity doesn't tell you which coupling is actually costing the team
   time today; the same connascence type can be dormant or a daily source of ripple failures
-  depending on how often the coupled code actually changes.
-- source: https://codescene.com/blog/manage-technical-debt-with-augmented-code-analysis/
+  depending on how often the coupled code actually changes and how far a change to it actually
+  propagates.
+- source: https://github.com/Egonex-AI/Understand-Anything
