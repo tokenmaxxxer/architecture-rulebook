@@ -104,4 +104,4 @@ than silently picking a side.
 - condition: a container/component boundary diagram for a decision record is a screenshot or hand-drawn image pasted into the record, with no text source a reviewer can diff against the prior version
 - choice: produce the diagram from a single text-based model (one DSL/model file that generates the context/container/component views), and check that source into the record's write scope so the diagram diffs like code across revisions; do not treat a hand-maintained image as satisfying the C4-diagram requirement
 - why: an image can silently drift from the actual decision with no reviewable diff; a single text model generating multiple views also keeps the context/container/component levels (rule 13) consistent with each other by construction instead of being drawn independently and drifting apart
-- source: https://structurizr.com/
+- source: https://github.com/cheriftj/c4-model-skill
